@@ -15,42 +15,118 @@ CultureInfo.CurrentUICulture = new CultureInfo("sv-SE");
 SeedManager manager = new SeedManager();
 
 Console.WriteLine("==== FRÖSAMLING ====");
-Console.WriteLine("(skriv q som kategori för att avsluta)");
+Console.WriteLine("(skriv q som kategori för att visa listan)");
 Console.WriteLine();
 
-// Keep adding seeds until the user types q
+// The first category is read before the loop. Inside the loop, the next
+// category is always read at the end, so "q" can be typed at any time
+// the program asks for a category.
+string category = ReadCategory();
+
 while (true)
 {
-    Console.Write("Ange kategori: ");
-    string category = Console.ReadLine() ?? string.Empty;
-
-    // "q" ends the input loop (case-insensitive, so Q works too)
-    if (category.Trim().Equals("q", StringComparison.OrdinalIgnoreCase))
+    // "q" shows the list. The user can then type q again to quit,
+    // or type a category to keep adding seeds.
+    if (IsQuit(category))
     {
-        break;
+        manager.ShowSeeds();
+
+        Console.WriteLine();
+        Console.WriteLine("Välj q för att avsluta eller fyll i kategori för att fortsätta lägga till frön.");
+        Console.WriteLine();
+
+        category = ReadCategory();
+
+        // q a second time (right after the list) ends the program
+        if (IsQuit(category))
+        {
+            break;
+        }
     }
 
-    Console.Write("Ange namn: ");
-    string name = Console.ReadLine() ?? string.Empty;
-
+    // Read the rest of the seed. Each helper repeats its question
+    // until the answer is valid.
+    string name = ReadName();
     bool edible = ReadEdible();
     decimal price = ReadPrice();
 
-    // Create a new Seed and hand it to the manager.
-    // The argument order must match the constructor: name, price, edible, category.
-    manager.AddSeed(new Seed(name.Trim(), price, edible, category.Trim()));
+    // try/catch: if AddSeed rejects the seed (empty value, negative price
+    // or a duplicate) it throws an ArgumentException. We catch it, show the
+    // message and carry on, so the program never crashes on bad data.
+    try
+    {
+        // The argument order must match the constructor: name, price, edible, category.
+        manager.AddSeed(new Seed(name, price, edible, category));
 
-    Console.WriteLine();
-    Console.WriteLine("Fröet har lagts till!");
-    Console.WriteLine();
+        Console.WriteLine();
+        Console.WriteLine("Fröet har lagts till!");
+        Console.WriteLine();
+    }
+    catch (ArgumentException ex)
+    {
+        ShowError(ex.Message);
+    }
+
+    // Ask for the next category (or q to show the list)
+    category = ReadCategory();
 }
-
-manager.ShowSeeds();
 
 // ------------------------------------------------------------------
 // Helper methods. In top-level statements they are written below the
 // main code and work as local functions inside the generated Main.
 // ------------------------------------------------------------------
+
+// Returns true if the text is "q" (not case sensitive).
+static bool IsQuit(string text)
+{
+    return text.Equals("q", StringComparison.OrdinalIgnoreCase);
+}
+
+// Prints an error in red using the format "FEL:" followed by the message.
+static void ShowError(string message)
+{
+    Console.WriteLine();
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.WriteLine("FEL:");
+    Console.WriteLine(message);
+    Console.ResetColor();
+    Console.WriteLine();
+}
+
+// Reads a category. Repeats until the user types something other than
+// empty text. "q" is accepted here because it means "show the list".
+static string ReadCategory()
+{
+    while (true)
+    {
+        Console.Write("Ange kategori: ");
+        string input = (Console.ReadLine() ?? string.Empty).Trim();
+
+        if (input.Length > 0)
+        {
+            return input;
+        }
+
+        ShowError("Kategorin får inte vara tom.");
+    }
+}
+
+// Reads a seed name. Repeats until the user types something other than empty text.
+static string ReadName()
+{
+    while (true)
+    {
+        Console.Write("Ange namn: ");
+        string input = (Console.ReadLine() ?? string.Empty).Trim();
+
+        if (input.Length > 0)
+        {
+            return input;
+        }
+
+        ShowError("Namnet får inte vara tomt.");
+    }
+}
 
 // Asks whether the seed is edible and converts the answer to a bool.
 // Repeats the question until the answer is valid.
@@ -70,12 +146,12 @@ static bool ReadEdible()
             return false;
         }
 
-        Console.WriteLine("Svara j eller n.");
+        ShowError("Svara j eller n.");
     }
 }
 
 // Reads a price from the user. Accepts both "12,50" and "12.50".
-// Repeats until a number is entered. Full error handling comes in Level 3.
+// Repeats until the price is a valid, non-negative number.
 static decimal ReadPrice()
 {
     while (true)
@@ -87,12 +163,22 @@ static decimal ReadPrice()
         // so the result is the same on every computer.
         string normalized = input.Trim().Replace(',', '.');
 
-        if (decimal.TryParse(normalized, NumberStyles.Number,
-                            CultureInfo.InvariantCulture, out decimal price))
+        // TryParse returns false instead of throwing an exception
+        // when the text is not a number (for example "abc").
+        if (!decimal.TryParse(normalized, NumberStyles.Number,
+                              CultureInfo.InvariantCulture, out decimal price))
         {
-            return price;
+            ShowError("Ogiltigt pris. Ange ett numeriskt värde.");
+            continue;
         }
 
-        Console.WriteLine("Ogiltigt pris. Ange ett numeriskt värde.");
+        // Negative prices make no sense
+        if (price < 0)
+        {
+            ShowError("Priset får inte vara negativt.");
+            continue;
+        }
+
+        return price;
     }
 }

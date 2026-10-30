@@ -17,8 +17,43 @@ namespace Week44_MiniProject_ProductListManagementSystem
         private readonly List<Seed> seeds = new List<Seed>();
 
         // Adds a seed to the list.
+        // The checks below are a safety net: even if some other code forgets to
+        // validate the input, the manager never stores an invalid seed.
+        // An invalid seed makes the method throw an ArgumentException,
+        // which the caller catches with try/catch.
         public void AddSeed(Seed seed)
         {
+            if (string.IsNullOrWhiteSpace(seed.ProductName))
+            {
+                throw new ArgumentException("Namnet får inte vara tomt.");
+            }
+
+            if (string.IsNullOrWhiteSpace(seed.ProductCategory))
+            {
+                throw new ArgumentException("Kategorin får inte vara tom.");
+            }
+
+            if (seed.ProductPrice < 0)
+            {
+                throw new ArgumentException("Priset får inte vara negativt.");
+            }
+
+            // LINQ: Where() narrows the list down to the same category,
+            // FirstOrDefault() then returns the first seed with the same name,
+            // or null if there is none. Comparison ignores upper/lower case
+            // and follows Swedish rules (so "Ärtor" equals "ärtor").
+            Seed? existing = seeds
+                .Where(s => string.Equals(s.ProductCategory, seed.ProductCategory,
+                                          StringComparison.CurrentCultureIgnoreCase))
+                .FirstOrDefault(s => string.Equals(s.ProductName, seed.ProductName,
+                                                   StringComparison.CurrentCultureIgnoreCase));
+
+            if (existing != null)
+            {
+                throw new ArgumentException(
+                    $"'{seed.ProductName}' finns redan i kategorin '{seed.ProductCategory}'.");
+            }
+
             seeds.Add(seed);
         }
 
@@ -67,17 +102,11 @@ namespace Week44_MiniProject_ProductListManagementSystem
         }
 
         // Adds up the price of every seed and returns the total.
+        // LINQ: Sum() replaces the foreach loop from Level 2.
+        // On an empty list it simply returns 0.
         public decimal CalculateTotal()
         {
-            decimal total = 0;
-
-            // Plain loop for now. In Level 3 this can be replaced by LINQ's Sum().
-            foreach (Seed seed in seeds)
-            {
-                total += seed.ProductPrice;
-            }
-
-            return total;
+            return seeds.Sum(s => s.ProductPrice);
         }
 
         // Converts a price to text with exactly two decimals.
