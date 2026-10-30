@@ -11,8 +11,8 @@ Console.InputEncoding = Encoding.UTF8;
 CultureInfo.CurrentCulture = new CultureInfo("sv-SE");
 CultureInfo.CurrentUICulture = new CultureInfo("sv-SE");
 
-// The list that stores all seeds while the program is running
-List<Seed> seeds = new List<Seed>();
+// The manager owns the list of seeds
+SeedManager manager = new SeedManager();
 
 Console.WriteLine("==== FRÖSAMLING ====");
 Console.WriteLine("(skriv q som kategori för att avsluta)");
@@ -36,16 +36,16 @@ while (true)
     bool edible = ReadEdible();
     decimal price = ReadPrice();
 
-    // Create a new Seed object and add it to the list.
+    // Create a new Seed and hand it to the manager.
     // The argument order must match the constructor: name, price, edible, category.
-    seeds.Add(new Seed(name.Trim(), price, edible, category.Trim()));
+    manager.AddSeed(new Seed(name.Trim(), price, edible, category.Trim()));
 
     Console.WriteLine();
     Console.WriteLine("Fröet har lagts till!");
     Console.WriteLine();
 }
 
-ShowSeeds(seeds);
+manager.ShowSeeds();
 
 // ------------------------------------------------------------------
 // Helper methods. In top-level statements they are written below the
@@ -94,36 +94,5 @@ static decimal ReadPrice()
         }
 
         Console.WriteLine("Ogiltigt pris. Ange ett numeriskt värde.");
-    }
-}
-
-// Prints every seed in the list as a table row.
-static void ShowSeeds(List<Seed> seeds)
-{
-    Console.WriteLine();
-    Console.WriteLine("===== FRÖLISTA =====");
-    Console.WriteLine();
-
-    if (seeds.Count == 0)
-    {
-        Console.WriteLine("Inga frön har lagts till.");
-        return;
-    }
-
-    // Find the longest category and name so the columns line up.
-    int categoryWidth = seeds.Max(s => s.ProductCategory.Length);
-    int nameWidth = seeds.Max(s => s.ProductName.Length);
-
-    foreach (Seed seed in seeds)
-    {
-        string edibleText = seed.Edible ? "Ätbar     " : "Inte ätbar";
-
-        // PadRight adds spaces after the text to fill the column width.
-        // "0.##" shows 599 as "599" and 12.5 as "12,5" (Swedish format).
-        Console.WriteLine(
-            $"{seed.ProductCategory.PadRight(categoryWidth)} | " +
-            $"{seed.ProductName.PadRight(nameWidth)} | " +
-            $"{edibleText} | " +
-            $"{seed.ProductPrice.ToString("0.##", CultureInfo.CurrentCulture)} kr");
     }
 }
