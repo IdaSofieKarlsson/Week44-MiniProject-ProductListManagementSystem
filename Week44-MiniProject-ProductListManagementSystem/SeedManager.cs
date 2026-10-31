@@ -57,6 +57,37 @@ namespace Week44_MiniProject_ProductListManagementSystem
             seeds.Add(seed);
         }
 
+        // Returns every distinct category in the list, sorted alphabetically.
+        // Distinct() removes duplicates (ignoring upper/lower case), and
+        // OrderBy() with the current culture (sv-SE) puts å, ä, ö after z.
+        public List<string> GetCategories()
+        {
+            return seeds
+                .Select(s => s.ProductCategory)
+                .Distinct(StringComparer.CurrentCultureIgnoreCase)
+                .OrderBy(c => c, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+        }
+
+        // Returns all seeds whose name contains the search text.
+        // Contains() makes it a partial match: "ros" finds "Ringblomma ros" and
+        // "Rosenkål". The comparison ignores upper/lower case.
+        public List<Seed> SearchByName(string searchText)
+        {
+            return seeds
+                .Where(s => s.ProductName.Contains(searchText, StringComparison.CurrentCultureIgnoreCase))
+                .ToList();
+        }
+
+        // Returns all seeds that belong to the given category.
+        public List<Seed> SearchByCategory(string category)
+        {
+            return seeds
+                .Where(s => string.Equals(s.ProductCategory, category,
+                                          StringComparison.CurrentCultureIgnoreCase))
+                .ToList();
+        }
+
         // Prints all seeds sorted from lowest to highest price,
         // followed by the total price at the bottom.
         public void ShowSeeds()
@@ -75,13 +106,62 @@ namespace Week44_MiniProject_ProductListManagementSystem
             // sequence, so the original list keeps its insertion order.
             List<Seed> sortedSeeds = seeds.OrderBy(s => s.ProductPrice).ToList();
 
+            // null = print in the normal console color
+            PrintTable(sortedSeeds, null);
+
+            // Print the total price at the bottom, between two divider lines.
+            Console.WriteLine();
+            Console.WriteLine("-----------------------------");
+            Console.WriteLine($"TOTALT PRIS: {FormatPrice(CalculateTotal())} kr");
+            Console.WriteLine("-----------------------------");
+        }
+
+        // Prints search results highlighted in green.
+        // Called with the list that SearchByName() or SearchByCategory() returned.
+        public void ShowSearchResults(List<Seed> results)
+        {
+            Console.WriteLine();
+
+            if (results.Count == 0)
+            {
+                Console.WriteLine("Inga frön hittades.");
+                return;
+            }
+
+            // Heading and rows are printed in green so the hits stand out.
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("HITTADE FRÖN:");
+            Console.ResetColor();
+            Console.WriteLine();
+
+            PrintTable(results.OrderBy(s => s.ProductPrice).ToList(), ConsoleColor.Green);
+        }
+
+        // Adds up the price of every seed and returns the total.
+        // LINQ: Sum() adds up the prices. On an empty list it returns 0.
+        public decimal CalculateTotal()
+        {
+            return seeds.Sum(s => s.ProductPrice);
+        }
+
+        // Prints a list of seeds as an aligned table.
+        // If a color is given, every row is printed in that color.
+        // Used by both ShowSeeds() and ShowSearchResults().
+        private static void PrintTable(List<Seed> list, ConsoleColor? color)
+        {
             // Find the widest value in each column so everything lines up.
             // The price texts are formatted first so we can measure them.
-            int categoryWidth = sortedSeeds.Max(s => s.ProductCategory.Length);
-            int nameWidth = sortedSeeds.Max(s => s.ProductName.Length);
-            int priceWidth = sortedSeeds.Max(s => FormatPrice(s.ProductPrice).Length);
+            int categoryWidth = list.Max(s => s.ProductCategory.Length);
+            int nameWidth = list.Max(s => s.ProductName.Length);
+            int priceWidth = list.Max(s => FormatPrice(s.ProductPrice).Length);
 
-            foreach (Seed seed in sortedSeeds)
+            // Switch to the highlight color (if any) before printing the rows
+            if (color != null)
+            {
+                Console.ForegroundColor = color.Value;
+            }
+
+            foreach (Seed seed in list)
             {
                 string edibleText = seed.Edible ? "Ätbar     " : "Inte ätbar";
 
@@ -94,19 +174,8 @@ namespace Week44_MiniProject_ProductListManagementSystem
                     $"{FormatPrice(seed.ProductPrice).PadLeft(priceWidth)} kr");
             }
 
-            // Print the total price at the bottom, between two divider lines.
-            Console.WriteLine();
-            Console.WriteLine("-----------------------------");
-            Console.WriteLine($"TOTALT PRIS: {FormatPrice(CalculateTotal())} kr");
-            Console.WriteLine("-----------------------------");
-        }
-
-        // Adds up the price of every seed and returns the total.
-        // LINQ: Sum() replaces the foreach loop from Level 2.
-        // On an empty list it simply returns 0.
-        public decimal CalculateTotal()
-        {
-            return seeds.Sum(s => s.ProductPrice);
+            // Always go back to the normal color afterwards
+            Console.ResetColor();
         }
 
         // Converts a price to text with exactly two decimals.
