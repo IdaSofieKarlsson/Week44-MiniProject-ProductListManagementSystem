@@ -87,8 +87,17 @@ static void AddSeedFromInput(SeedManager manager)
 {
     Console.WriteLine();
 
+    // CHANGED: the category is no longer typed as free text. ChooseCategory()
+    // shows the numbered list and returns the chosen SeedCategory.
+    // It returns null if the user typed 0 to go back, and then we stop here.
+    SeedCategory? category = ChooseCategory();
+
+    if (category == null)
+    {
+        return;
+    }
+
     // Each Read... helper repeats its question until the answer is valid
-    string category = ReadRequiredText("Ange kategori: ", "Kategorin får inte vara tom.");
     string name = ReadRequiredText("Ange namn: ", "Namnet får inte vara tomt.");
     bool edible = ReadEdible();
     decimal price = ReadPrice();
@@ -99,7 +108,9 @@ static void AddSeedFromInput(SeedManager manager)
     try
     {
         // The argument order must match the constructor: name, price, edible, category.
-        manager.AddSeed(new Seed(name, price, edible, category));
+        // CHANGED: category.Value is used because "category" is nullable (SeedCategory?).
+        // We know it is not null here, since we returned above if it was.
+        manager.AddSeed(new Seed(name, price, edible, category.Value));
 
         Console.WriteLine();
         Console.WriteLine("Fröet har lagts till!");
@@ -124,43 +135,56 @@ static void RunNameSearch(SeedManager manager)
 
 // Menu option 3: lists all categories with numbers, the user picks a number,
 // and all seeds in that category are shown in green.
+// CHANGED: the list of categories now comes from the enum through
+// ChooseCategory(), instead of being built from the seeds.
 static void RunCategorySearch(SeedManager manager)
 {
-    List<string> categories = manager.GetCategories();
-
     Console.WriteLine();
 
-    if (categories.Count == 0)
+    SeedCategory? chosenCategory = ChooseCategory();
+
+    // null means the user typed 0 to go back to the menu
+    if (chosenCategory == null)
     {
-        Console.WriteLine("Inga frön har lagts till ännu, så det finns inga kategorier.");
         return;
     }
+
+    List<Seed> results = manager.SearchByCategory(chosenCategory.Value);
+    manager.ShowSearchResults(results);
+}
+
+// NEW: shows every category as a numbered list and lets the user pick one.
+// Used by both "add seed" and "search by category", so the list looks the same
+// in both places. Returns null if the user typed 0 (go back).
+static SeedCategory? ChooseCategory()
+{
+    // Enum.GetValues<SeedCategory>() returns every member of the enum
+    // in the order they are declared in SeedCategory.cs.
+    SeedCategory[] categories = Enum.GetValues<SeedCategory>();
 
     Console.WriteLine("===== KATEGORIER =====");
     Console.WriteLine();
 
     // Print the categories numbered from 1.
-    // The list index starts at 0, so we print i + 1.
-    for (int i = 0; i < categories.Count; i++)
+    // The array index starts at 0, so we print i + 1.
+    // GetDisplayName() converts the enum member to its Swedish text.
+    for (int i = 0; i < categories.Length; i++)
     {
-        Console.WriteLine($"{i + 1}. {categories[i]}");
+        Console.WriteLine($"{i + 1}. {categories[i].GetDisplayName()}");
     }
 
     Console.WriteLine();
 
-    int number = ReadNumber(categories.Count);
+    int number = ReadNumber(categories.Length);
 
-    // 0 means "go back to the menu"
+    // 0 means "go back"
     if (number == 0)
     {
-        return;
+        return null;
     }
 
-    // Convert the number back to a list index (number - 1)
-    string chosenCategory = categories[number - 1];
-
-    List<Seed> results = manager.SearchByCategory(chosenCategory);
-    manager.ShowSearchResults(results);
+    // Convert the number back to an array index (number - 1)
+    return categories[number - 1];
 }
 
 // Prints an error in red using the format "FEL:" followed by the message.

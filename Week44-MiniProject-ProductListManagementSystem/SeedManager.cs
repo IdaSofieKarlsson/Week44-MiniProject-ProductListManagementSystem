@@ -28,9 +28,12 @@ namespace Week44_MiniProject_ProductListManagementSystem
                 throw new ArgumentException("Namnet får inte vara tomt.");
             }
 
-            if (string.IsNullOrWhiteSpace(seed.ProductCategory))
+            // CHANGED: the old "category is empty" check is gone, because an enum can
+            // never be empty. Instead we check that the value is a real member.
+            // This guards against casts like (SeedCategory)99, which compile fine.
+            if (!Enum.IsDefined(seed.ProductCategory))
             {
-                throw new ArgumentException("Kategorin får inte vara tom.");
+                throw new ArgumentException("Ogiltig kategori.");
             }
 
             if (seed.ProductPrice < 0)
@@ -42,32 +45,37 @@ namespace Week44_MiniProject_ProductListManagementSystem
             // FirstOrDefault() then returns the first seed with the same name,
             // or null if there is none. Comparison ignores upper/lower case
             // and follows Swedish rules (so "Ärtor" equals "ärtor").
+            // CHANGED: categories are now compared with == (enums compare by value),
+            // instead of string.Equals().
             Seed? existing = seeds
-                .Where(s => string.Equals(s.ProductCategory, seed.ProductCategory,
-                                          StringComparison.CurrentCultureIgnoreCase))
+                .Where(s => s.ProductCategory == seed.ProductCategory)
                 .FirstOrDefault(s => string.Equals(s.ProductName, seed.ProductName,
                                                    StringComparison.CurrentCultureIgnoreCase));
 
             if (existing != null)
             {
+                // CHANGED: the enum is converted to Swedish text for the message
                 throw new ArgumentException(
-                    $"'{seed.ProductName}' finns redan i kategorin '{seed.ProductCategory}'.");
+                    $"'{seed.ProductName}' finns redan i kategorin '{seed.ProductCategory.GetDisplayName()}'.");
             }
 
             seeds.Add(seed);
         }
 
-        // Returns every distinct category in the list, sorted alphabetically.
-        // Distinct() removes duplicates (ignoring upper/lower case), and
-        // OrderBy() with the current culture (sv-SE) puts å, ä, ö after z.
-        public List<string> GetCategories()
-        {
-            return seeds
-                .Select(s => s.ProductCategory)
-                .Distinct(StringComparer.CurrentCultureIgnoreCase)
-                .OrderBy(c => c, StringComparer.CurrentCultureIgnoreCase)
-                .ToList();
-        }
+        // REMOVED: GetCategories(). It built the category list from the seeds,
+        // but the categories now come from the enum itself (see Program.cs).
+
+        //// Returns every distinct category in the list, sorted alphabetically.
+        //// Distinct() removes duplicates (ignoring upper/lower case), and
+        //// OrderBy() with the current culture (sv-SE) puts å, ä, ö after z.
+        //public List<string> GetCategories()
+        //{
+        //    return seeds
+        //        .Select(s => s.ProductCategory)
+        //        .Distinct(StringComparer.CurrentCultureIgnoreCase)
+        //        .OrderBy(c => c, StringComparer.CurrentCultureIgnoreCase)
+        //        .ToList();
+        //}
 
         // Returns all seeds whose name contains the search text.
         // Contains() makes it a partial match: "ros" finds "Ringblomma ros" and
@@ -80,11 +88,12 @@ namespace Week44_MiniProject_ProductListManagementSystem
         }
 
         // Returns all seeds that belong to the given category.
-        public List<Seed> SearchByCategory(string category)
+        // CHANGED: the parameter is now a SeedCategory instead of a string,
+        // and the comparison is a plain ==.
+        public List<Seed> SearchByCategory(SeedCategory category)
         {
             return seeds
-                .Where(s => string.Equals(s.ProductCategory, category,
-                                          StringComparison.CurrentCultureIgnoreCase))
+                .Where(s => s.ProductCategory == category)
                 .ToList();
         }
 
@@ -151,7 +160,9 @@ namespace Week44_MiniProject_ProductListManagementSystem
         {
             // Find the widest value in each column so everything lines up.
             // The price texts are formatted first so we can measure them.
-            int categoryWidth = list.Max(s => s.ProductCategory.Length);
+            // CHANGED: the category width is measured on the Swedish display text,
+            // because the enum value itself is not what is printed.
+            int categoryWidth = list.Max(s => s.ProductCategory.GetDisplayName().Length);
             int nameWidth = list.Max(s => s.ProductName.Length);
             int priceWidth = list.Max(s => FormatPrice(s.ProductPrice).Length);
 
@@ -167,8 +178,9 @@ namespace Week44_MiniProject_ProductListManagementSystem
 
                 // PadRight fills the column with spaces after the text,
                 // PadLeft fills with spaces before the text (right-aligned).
+                // CHANGED: GetDisplayName() converts the enum to Swedish text.
                 Console.WriteLine(
-                    $"{seed.ProductCategory.PadRight(categoryWidth)} | " +
+                    $"{seed.ProductCategory.GetDisplayName().PadRight(categoryWidth)} | " +
                     $"{seed.ProductName.PadRight(nameWidth)} | " +
                     $"{edibleText} | " +
                     $"{FormatPrice(seed.ProductPrice).PadLeft(priceWidth)} kr");

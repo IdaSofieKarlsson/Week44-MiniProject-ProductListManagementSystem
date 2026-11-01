@@ -7,7 +7,8 @@ namespace Week44_MiniProject_ProductListManagementSystem
     internal class Seed
     {
         //Constructor
-        public Seed(string productName, decimal productPrice, bool edible, string productCategory)
+        // CHANGED: the last parameter was "string productCategory", now it is a SeedCategory
+        public Seed(string productName, decimal productPrice, bool edible, SeedCategory productCategory)
         {
             ProductName = productName;
             ProductPrice = productPrice;
@@ -20,8 +21,9 @@ namespace Week44_MiniProject_ProductListManagementSystem
         public decimal ProductPrice { get; set; }
         //edible, not necessarily a fruit or vegetable, but can be eaten (like sunflower seeds), or Ringblomma in your salad
         public bool Edible { get; set; }
-        //for now, this is a string, but in the future, we can make it an enum
-        public string ProductCategory { get; set; }
+        // CHANGED: the type was "string", now it is the enum SeedCategory.
+        // The value can only be one of the seven categories.
+        public SeedCategory ProductCategory { get; set; }
 
     }
 }
