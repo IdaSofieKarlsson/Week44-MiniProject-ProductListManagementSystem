@@ -4,7 +4,6 @@ using System.Text;
 
 namespace Week44_MiniProject_ProductListManagementSystem
 {
-    // NEW: the enum that replaces the free-text category.
     // Member names are in English and contain no å, ä, ö or spaces.
     // The Swedish text shown to the user comes from GetDisplayName() below.
     // To add a category later, add one member here and one line in GetDisplayName().
@@ -19,9 +18,7 @@ namespace Week44_MiniProject_ProductListManagementSystem
         Perennials        // Perenner
     }
 
-    // NEW: extension methods for SeedCategory.
-    // An extension class must be static. The "this" before the first parameter
-    // makes it possible to write category.GetDisplayName() on any SeedCategory value.
+    // An extension class must be static. The "this" before the first parameter makes it possible to write category.GetDisplayName() on any SeedCategory value.
     internal static class SeedCategoryExtensions
     {
         // Converts an enum value to the Swedish text shown in the console.
@@ -38,8 +35,7 @@ namespace Week44_MiniProject_ProductListManagementSystem
                 SeedCategory.SummerFlowers => "Sommarblommor",
                 SeedCategory.Perennials => "Perenner",
 
-                // Reached only if a member was added to the enum but not to this
-                // switch. Failing loudly here makes the mistake easy to find.
+                // Reached only if a member was added to the enum but not to this switch. Failing loudly here makes the mistake easy to find.
                 _ => throw new ArgumentOutOfRangeException(nameof(category), category, null)
             };
         }

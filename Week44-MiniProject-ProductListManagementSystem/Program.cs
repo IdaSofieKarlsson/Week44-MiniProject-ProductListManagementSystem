@@ -14,8 +14,7 @@ CultureInfo.CurrentUICulture = new CultureInfo("sv-SE");
 // The manager owns the list of seeds
 SeedManager manager = new SeedManager();
 
-// --- Main menu loop ---
-// The loop runs until the user chooses to quit.
+//Main menu loop, runs until the user chooses to quit.
 bool running = true;
 
 while (running)
@@ -24,8 +23,6 @@ while (running)
 
     string choice = (Console.ReadLine() ?? string.Empty).Trim().ToLower();
 
-    // switch picks the code to run depending on the menu choice.
-    // "break" ends each case and sends us back to the top of the loop.
     switch (choice)
     {
         case "1":
@@ -60,11 +57,7 @@ while (running)
 Console.WriteLine();
 Console.WriteLine("Hej då!");
 
-// ------------------------------------------------------------------
-// Helper methods. In top-level statements they are written below the
-// main code and work as local functions inside the generated Main.
-// ------------------------------------------------------------------
-
+// Helper methods. 
 // Prints the main menu.
 static void ShowMenu()
 {
@@ -87,9 +80,7 @@ static void AddSeedFromInput(SeedManager manager)
 {
     Console.WriteLine();
 
-    // CHANGED: the category is no longer typed as free text. ChooseCategory()
-    // shows the numbered list and returns the chosen SeedCategory.
-    // It returns null if the user typed 0 to go back, and then we stop here.
+    //ChooseCategory() shows the numbered list and returns the chosen SeedCategory. It returns null if the user typed 0 to go back, and then we stop here.
     SeedCategory? category = ChooseCategory();
 
     if (category == null)
@@ -103,13 +94,10 @@ static void AddSeedFromInput(SeedManager manager)
     decimal price = ReadPrice();
 
     // try/catch: if AddSeed rejects the seed (empty value, negative price
-    // or a duplicate) it throws an ArgumentException. We catch it, show the
-    // message and go back to the menu, so the program never crashes on bad data.
+    // or a duplicate) it throws an ArgumentException, shows the message and goes back to the menu, so the program never crashes on bad data.
     try
     {
         // The argument order must match the constructor: name, price, edible, category.
-        // CHANGED: category.Value is used because "category" is nullable (SeedCategory?).
-        // We know it is not null here, since we returned above if it was.
         manager.AddSeed(new Seed(name, price, edible, category.Value));
 
         Console.WriteLine();
@@ -133,10 +121,8 @@ static void RunNameSearch(SeedManager manager)
     manager.ShowSearchResults(results);
 }
 
-// Menu option 3: lists all categories with numbers, the user picks a number,
-// and all seeds in that category are shown in green.
-// CHANGED: the list of categories now comes from the enum through
-// ChooseCategory(), instead of being built from the seeds.
+// Menu option 3: lists all categories with numbers, the user picks a number, and all seeds in that category are shown in green.
+// The list of categories now comes from the enum through ChooseCategory()
 static void RunCategorySearch(SeedManager manager)
 {
     Console.WriteLine();
@@ -153,21 +139,17 @@ static void RunCategorySearch(SeedManager manager)
     manager.ShowSearchResults(results);
 }
 
-// NEW: shows every category as a numbered list and lets the user pick one.
-// Used by both "add seed" and "search by category", so the list looks the same
-// in both places. Returns null if the user typed 0 (go back).
+// Shows every category as a numbered list and lets the user pick one.
+// Used by both "add seed" and "search by category", so the list looks the same in both places. Returns null if the user typed 0 (go back).
 static SeedCategory? ChooseCategory()
 {
-    // Enum.GetValues<SeedCategory>() returns every member of the enum
-    // in the order they are declared in SeedCategory.cs.
+    // Enum.GetValues<SeedCategory>() returns every member of the enum in the order they are declared in SeedCategory.cs.
     SeedCategory[] categories = Enum.GetValues<SeedCategory>();
 
     Console.WriteLine("===== KATEGORIER =====");
     Console.WriteLine();
 
-    // Print the categories numbered from 1.
-    // The array index starts at 0, so we print i + 1.
-    // GetDisplayName() converts the enum member to its Swedish text.
+    // Print the categories numbered from 1. GetDisplayName() converts the enum member to its Swedish text.
     for (int i = 0; i < categories.Length; i++)
     {
         Console.WriteLine($"{i + 1}. {categories[i].GetDisplayName()}");
@@ -198,8 +180,7 @@ static void ShowError(string message)
     Console.WriteLine();
 }
 
-// Reads a text value. Repeats until the user types something other than
-// empty text. Used for category, name and the search word.
+// Reads a text value. Repeats until the user types something other than empty text. Used for category, name and the search word.
 static string ReadRequiredText(string prompt, string errorMessage)
 {
     while (true)
@@ -216,8 +197,7 @@ static string ReadRequiredText(string prompt, string errorMessage)
     }
 }
 
-// Reads a number between 0 and max. Repeats until the input is valid.
-// 0 is used as "go back".
+// Reads a number between 0 and max. Repeats until the input is valid. 0 is used as "go back".
 static int ReadNumber(int max)
 {
     while (true)
@@ -225,8 +205,7 @@ static int ReadNumber(int max)
         Console.Write("Välj nummer (0 för att gå tillbaka): ");
         string input = (Console.ReadLine() ?? string.Empty).Trim();
 
-        // TryParse returns false instead of throwing an exception
-        // when the text is not a whole number.
+        // TryParse returns false instead of throwing an exception when the text is not a whole number.
         if (int.TryParse(input, out int number) && number >= 0 && number <= max)
         {
             return number;
@@ -236,8 +215,7 @@ static int ReadNumber(int max)
     }
 }
 
-// Asks whether the seed is edible and converts the answer to a bool.
-// Repeats the question until the answer is valid.
+// Asks whether the seed is edible and converts the answer to a bool. Repeats the question until the answer is valid.
 static bool ReadEdible()
 {
     while (true)
@@ -258,8 +236,7 @@ static bool ReadEdible()
     }
 }
 
-// Reads a price from the user. Accepts both "12,50" and "12.50".
-// Repeats until the price is a valid, non-negative number.
+// Reads a price from the user. Accepts both "12,50" and "12.50". Repeats until the price is a valid, non-negative number.
 static decimal ReadPrice()
 {
     while (true)
@@ -267,8 +244,7 @@ static decimal ReadPrice()
         Console.Write("Ange pris: ");
         string input = Console.ReadLine() ?? string.Empty;
 
-        // Replace comma with dot and parse with the invariant culture,
-        // so the result is the same on every computer.
+        // Replace comma with dot and parse with the invariant culture, so the result is the same on every computer.
         string normalized = input.Trim().Replace(',', '.');
 
         if (!decimal.TryParse(normalized, NumberStyles.Number,
@@ -278,7 +254,7 @@ static decimal ReadPrice()
             continue;
         }
 
-        // Negative prices make no sense
+        // Negative prices throws an error. The price can be 0,00 kr
         if (price < 0)
         {
             ShowError("Priset får inte vara negativt.");
